@@ -1,0 +1,1019 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Netflix Engagement Analytics</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --red: #E50914;
+      --red-dark: #b20710;
+      --red-glow: rgba(229,9,20,0.25);
+      --bg: #0a0a0a;
+      --surface: #111111;
+      --surface2: #1a1a1a;
+      --border: rgba(255,255,255,0.07);
+      --text: #f5f5f5;
+      --muted: #888;
+      --accent: #f5c518;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 16px;
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 56px;
+      background: linear-gradient(to bottom, rgba(0,0,0,0.9), transparent);
+      backdrop-filter: blur(6px);
+    }
+
+    .nav-logo {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2rem;
+      color: var(--red);
+      letter-spacing: 3px;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 36px;
+      list-style: none;
+    }
+
+    .nav-links a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.85rem;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      transition: color 0.2s;
+    }
+
+    .nav-links a:hover { color: var(--text); }
+
+    /* ── HERO ── */
+    .hero {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 120px 56px 80px;
+      overflow: hidden;
+    }
+
+    .hero-bg {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 60% at 60% 40%, rgba(229,9,20,0.12) 0%, transparent 70%),
+        radial-gradient(ellipse 50% 50% at 10% 80%, rgba(229,9,20,0.06) 0%, transparent 60%);
+    }
+
+    .hero-grid {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(var(--border) 1px, transparent 1px),
+        linear-gradient(90deg, var(--border) 1px, transparent 1px);
+      background-size: 60px 60px;
+      mask-image: radial-gradient(ellipse 80% 70% at 50% 50%, black, transparent);
+      opacity: 0.4;
+    }
+
+    .hero-eyebrow {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--red);
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+      opacity: 0;
+      animation: fadeUp 0.8s ease forwards 0.2s;
+    }
+
+    .hero-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(4rem, 10vw, 9rem);
+      line-height: 0.95;
+      letter-spacing: 0.02em;
+      max-width: 900px;
+      opacity: 0;
+      animation: fadeUp 0.8s ease forwards 0.4s;
+    }
+
+    .hero-title span { color: var(--red); }
+
+    .hero-subtitle {
+      margin-top: 28px;
+      max-width: 580px;
+      color: var(--muted);
+      font-size: 1.05rem;
+      font-weight: 300;
+      opacity: 0;
+      animation: fadeUp 0.8s ease forwards 0.6s;
+    }
+
+    .hero-badges {
+      margin-top: 48px;
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      opacity: 0;
+      animation: fadeUp 0.8s ease forwards 0.8s;
+    }
+
+    .badge {
+      padding: 8px 20px;
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      background: rgba(255,255,255,0.03);
+    }
+
+    .badge.hot {
+      border-color: var(--red);
+      color: var(--red);
+      background: var(--red-glow);
+    }
+
+    /* ── STATS STRIP ── */
+    .stats-strip {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .stat-item {
+      padding: 48px 40px;
+      border-right: 1px solid var(--border);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat-item:last-child { border-right: none; }
+
+    .stat-item::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0;
+      width: 0; height: 2px;
+      background: var(--red);
+      transition: width 1.2s ease;
+    }
+
+    .stat-item.visible::after { width: 100%; }
+
+    .stat-num {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 3.5rem;
+      color: var(--text);
+      letter-spacing: 0.02em;
+      line-height: 1;
+    }
+
+    .stat-num span { color: var(--red); }
+
+    .stat-label {
+      margin-top: 8px;
+      font-size: 0.8rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    /* ── SECTIONS ── */
+    section {
+      padding: 100px 56px;
+    }
+
+    .section-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--red);
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    .section-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(2.5rem, 5vw, 4.5rem);
+      letter-spacing: 0.03em;
+      line-height: 1;
+      max-width: 700px;
+    }
+
+    .section-body {
+      margin-top: 20px;
+      max-width: 600px;
+      color: var(--muted);
+      font-size: 0.95rem;
+      line-height: 1.8;
+    }
+
+    /* ── METRICS GRID ── */
+    .metrics-section {
+      background: var(--surface);
+    }
+
+    .metrics-grid {
+      margin-top: 60px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+    }
+
+    .metric-card {
+      background: var(--surface);
+      padding: 40px 36px;
+      position: relative;
+      overflow: hidden;
+      transition: background 0.3s;
+    }
+
+    .metric-card:hover { background: var(--surface2); }
+
+    .metric-icon {
+      font-size: 2rem;
+      margin-bottom: 20px;
+      display: block;
+    }
+
+    .metric-title {
+      font-weight: 600;
+      font-size: 1rem;
+      margin-bottom: 10px;
+    }
+
+    .metric-desc {
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .metric-bar {
+      margin-top: 24px;
+      height: 3px;
+      background: var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .metric-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--red-dark), var(--red));
+      border-radius: 2px;
+      width: 0;
+      transition: width 1.5s ease;
+    }
+
+    .metric-fill.visible { width: var(--w); }
+
+    .metric-pct {
+      margin-top: 8px;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--red);
+    }
+
+    /* ── HOW IT WORKS ── */
+    .flow {
+      margin-top: 70px;
+      display: flex;
+      gap: 0;
+      position: relative;
+    }
+
+    .flow::before {
+      content: '';
+      position: absolute;
+      top: 36px;
+      left: 36px;
+      right: 36px;
+      height: 1px;
+      background: linear-gradient(90deg, var(--red), var(--border), var(--border));
+    }
+
+    .flow-step {
+      flex: 1;
+      padding: 0 24px;
+      text-align: center;
+    }
+
+    .flow-num {
+      width: 72px;
+      height: 72px;
+      border: 1px solid var(--red);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 24px;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.6rem;
+      color: var(--red);
+      background: var(--bg);
+      position: relative;
+      z-index: 1;
+      transition: background 0.3s, color 0.3s;
+    }
+
+    .flow-step:hover .flow-num {
+      background: var(--red);
+      color: #fff;
+    }
+
+    .flow-step-title {
+      font-weight: 600;
+      font-size: 0.95rem;
+      margin-bottom: 10px;
+    }
+
+    .flow-step-desc {
+      font-size: 0.82rem;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    /* ── CHART ── */
+    .chart-section { background: var(--surface); }
+
+    .chart-container {
+      margin-top: 60px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+    }
+
+    .chart-box {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      padding: 32px;
+    }
+
+    .chart-title {
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 28px;
+      color: var(--muted);
+    }
+
+    /* Bar chart */
+    .bar-chart {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .bar-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .bar-label {
+      font-size: 0.78rem;
+      color: var(--muted);
+      width: 120px;
+      flex-shrink: 0;
+      font-family: 'DM Mono', monospace;
+    }
+
+    .bar-track {
+      flex: 1;
+      height: 28px;
+      background: rgba(255,255,255,0.04);
+      border-radius: 2px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .bar-fill {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, var(--red-dark), var(--red));
+      width: var(--w);
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform 1.2s cubic-bezier(0.23, 1, 0.32, 1);
+      border-radius: 2px;
+    }
+
+    .bar-fill.visible { transform: scaleX(1); }
+
+    .bar-val {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-family: 'DM Mono', monospace;
+      font-size: 0.72rem;
+      color: rgba(255,255,255,0.6);
+    }
+
+    /* Donut chart */
+    .donut-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 28px;
+    }
+
+    .donut-svg { overflow: visible; }
+
+    .donut-legend {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 100%;
+    }
+
+    .legend-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.8rem;
+    }
+
+    .legend-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .legend-name { flex: 1; color: var(--muted); }
+
+    .legend-pct {
+      font-family: 'DM Mono', monospace;
+      color: var(--text);
+      font-size: 0.78rem;
+    }
+
+    /* ── ALGO SECTION ── */
+    .algo-grid {
+      margin-top: 60px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+    }
+
+    .algo-card {
+      border: 1px solid var(--border);
+      padding: 36px;
+      background: var(--surface);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .algo-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0;
+      width: 3px;
+      height: 0;
+      background: var(--red);
+      transition: height 0.8s ease;
+    }
+
+    .algo-card:hover::before { height: 100%; }
+
+    .algo-num {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 5rem;
+      color: var(--border);
+      position: absolute;
+      top: 16px; right: 24px;
+      line-height: 1;
+      user-select: none;
+    }
+
+    .algo-title {
+      font-weight: 600;
+      font-size: 1.05rem;
+      margin-bottom: 12px;
+    }
+
+    .algo-desc {
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.8;
+    }
+
+    .algo-tag {
+      display: inline-block;
+      margin-top: 18px;
+      padding: 4px 12px;
+      background: var(--red-glow);
+      border: 1px solid rgba(229,9,20,0.3);
+      border-radius: 2px;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--red);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    /* ── IMPACT TABLE ── */
+    .table-wrap {
+      margin-top: 60px;
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+
+    table { width: 100%; border-collapse: collapse; }
+
+    thead {
+      background: var(--surface);
+    }
+
+    th {
+      padding: 16px 24px;
+      text-align: left;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      border-bottom: 1px solid var(--border);
+    }
+
+    td {
+      padding: 18px 24px;
+      font-size: 0.87rem;
+      border-bottom: 1px solid var(--border);
+      color: var(--muted);
+    }
+
+    td:first-child { color: var(--text); font-weight: 500; }
+
+    tr:last-child td { border-bottom: none; }
+
+    tbody tr { transition: background 0.2s; }
+    tbody tr:hover { background: var(--surface); }
+
+    .tag-pill {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 2px;
+      font-size: 0.7rem;
+      font-family: 'DM Mono', monospace;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .tag-high { background: rgba(229,9,20,0.15); color: var(--red); }
+    .tag-med { background: rgba(245,197,24,0.15); color: var(--accent); }
+    .tag-low { background: rgba(255,255,255,0.07); color: var(--muted); }
+
+    /* ── FOOTER ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 48px 56px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .footer-logo {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.5rem;
+      color: var(--red);
+      letter-spacing: 3px;
+    }
+
+    .footer-note {
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+
+    /* ── ANIMATIONS ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 900px) {
+      nav { padding: 16px 24px; }
+      .nav-links { display: none; }
+      section, .hero { padding: 80px 24px; }
+      .stats-strip { grid-template-columns: 1fr 1fr; }
+      .stat-item:nth-child(2) { border-right: none; }
+      .metrics-grid { grid-template-columns: 1fr; }
+      .chart-container { grid-template-columns: 1fr; }
+      .algo-grid { grid-template-columns: 1fr; }
+      .flow { flex-direction: column; }
+      .flow::before { display: none; }
+      footer { flex-direction: column; gap: 16px; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">NETFLIX</div>
+  <ul class="nav-links">
+    <li><a href="#overview">Overview</a></li>
+    <li><a href="#metrics">Metrics</a></li>
+    <li><a href="#algorithm">Algorithm</a></li>
+    <li><a href="#impact">Impact</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section class="hero" id="overview">
+  <div class="hero-bg"></div>
+  <div class="hero-grid"></div>
+  <div class="hero-eyebrow">Web Analytics · Case Study</div>
+  <h1 class="hero-title">Increasing <span>Engagement</span><br>at Netflix</h1>
+  <p class="hero-subtitle">
+    How Netflix leverages web analytics, machine learning, and data-driven personalization
+    to transform viewer behavior into smarter content experiences.
+  </p>
+  <div class="hero-badges">
+    <span class="badge hot">🔴 Live Analytics</span>
+    <span class="badge">Machine Learning</span>
+    <span class="badge">Personalization</span>
+    <span class="badge">Recommendation Engine</span>
+  </div>
+</section>
+
+<!-- STATS STRIP -->
+<div class="stats-strip" id="stats-strip">
+  <div class="stat-item">
+    <div class="stat-num"><span class="counter" data-target="283">0</span><span>M+</span></div>
+    <div class="stat-label">Global Subscribers</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-num"><span class="counter" data-target="80">0</span><span>%</span></div>
+    <div class="stat-label">Content via Recommendation</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-num"><span class="counter" data-target="3">0</span><span>B+</span></div>
+    <div class="stat-label">Hours Watched Monthly</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-num">$<span class="counter" data-target="1">0</span><span>B</span></div>
+    <div class="stat-label">Saved Annually via Retention</div>
+  </div>
+</div>
+
+<!-- METRICS -->
+<section class="metrics-section" id="metrics">
+  <div class="section-label">// Key Metrics Tracked</div>
+  <h2 class="section-title reveal">Data-Driven Viewer Insights</h2>
+  <p class="section-body reveal">
+    Netflix tracks a rich set of engagement signals across every session. These signals feed directly
+    into the recommendation engine, enabling hyper-personalized content discovery.
+  </p>
+
+  <div class="metrics-grid">
+    <div class="metric-card reveal">
+      <span class="metric-icon">⏱️</span>
+      <div class="metric-title">Watch Time</div>
+      <div class="metric-desc">Total hours a user spends viewing content per session and cumulatively. A primary indicator of deep engagement and platform stickiness.</div>
+      <div class="metric-bar"><div class="metric-fill" style="--w:88%"></div></div>
+      <div class="metric-pct">88% weight in ranking</div>
+    </div>
+    <div class="metric-card reveal">
+      <span class="metric-icon">✅</span>
+      <div class="metric-title">Completion Rates</div>
+      <div class="metric-desc">Percentage of a title finished. High completion signals strong content-audience fit and influences future recommendation confidence scores.</div>
+      <div class="metric-bar"><div class="metric-fill" style="--w:74%"></div></div>
+      <div class="metric-pct">74% weight in ranking</div>
+    </div>
+    <div class="metric-card reveal">
+      <span class="metric-icon">👆</span>
+      <div class="metric-title">User Interactions</div>
+      <div class="metric-desc">Clicks, thumbs up/down, search queries, browse depth, and playback behaviors like rewinding or skipping intros are captured as preference signals.</div>
+      <div class="metric-bar"><div class="metric-fill" style="--w:66%"></div></div>
+      <div class="metric-pct">66% weight in ranking</div>
+    </div>
+    <div class="metric-card reveal">
+      <span class="metric-icon">🔄</span>
+      <div class="metric-title">Re-watch Rate</div>
+      <div class="metric-desc">Frequency with which users revisit content. High re-watch indicates emotional connection and informs similar content surfacing in future rows.</div>
+      <div class="metric-bar"><div class="metric-fill" style="--w:55%"></div></div>
+      <div class="metric-pct">55% weight in ranking</div>
+    </div>
+    <div class="metric-card reveal">
+      <span class="metric-icon">🔍</span>
+      <div class="metric-title">Search Behavior</div>
+      <div class="metric-desc">What users search for but may not find signals content gaps. Used for acquisition decisions and improving category indexing on the platform.</div>
+      <div class="metric-bar"><div class="metric-fill" style="--w:48%"></div></div>
+      <div class="metric-pct">48% weight in ranking</div>
+    </div>
+    <div class="metric-card reveal">
+      <span class="metric-icon">⏸️</span>
+      <div class="metric-title">Drop-off Points</div>
+      <div class="metric-desc">Where users stop watching within a title. These heatmaps guide editorial decisions, thumbnail testing, and even pacing decisions in original productions.</div>
+      <div class="metric-bar"><div class="metric-fill" style="--w:60%"></div></div>
+      <div class="metric-pct">60% weight in ranking</div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section>
+  <div class="section-label">// Process Flow</div>
+  <h2 class="section-title reveal">How Personalization Works</h2>
+  <p class="section-body reveal">
+    From raw data collection to a fully personalized homepage — Netflix's pipeline runs billions of
+    micro-decisions every day.
+  </p>
+
+  <div class="flow">
+    <div class="flow-step reveal">
+      <div class="flow-num">01</div>
+      <div class="flow-step-title">Data Collection</div>
+      <div class="flow-step-desc">Every click, pause, search, and scroll is logged in real-time across all devices and regions.</div>
+    </div>
+    <div class="flow-step reveal">
+      <div class="flow-num">02</div>
+      <div class="flow-step-title">Processing & Cleaning</div>
+      <div class="flow-step-desc">Raw event streams are filtered, normalized, and structured into feature vectors for ML ingestion.</div>
+    </div>
+    <div class="flow-step reveal">
+      <div class="flow-num">03</div>
+      <div class="flow-step-title">Model Training</div>
+      <div class="flow-step-desc">Collaborative filtering and deep neural networks are trained on historical patterns to predict preference scores.</div>
+    </div>
+    <div class="flow-step reveal">
+      <div class="flow-num">04</div>
+      <div class="flow-step-title">Recommendation Ranking</div>
+      <div class="flow-step-desc">Candidate titles are ranked using contextual signals: time of day, device, recent activity, and mood.</div>
+    </div>
+    <div class="flow-step reveal">
+      <div class="flow-num">05</div>
+      <div class="flow-step-title">Personalized Output</div>
+      <div class="flow-step-desc">A unique homepage with curated rows, thumbnails, and even trailers is rendered for every user session.</div>
+    </div>
+  </div>
+</section>
+
+<!-- CHARTS -->
+<section class="chart-section">
+  <div class="section-label">// Engagement Analytics</div>
+  <h2 class="section-title reveal">Visualizing the Data</h2>
+
+  <div class="chart-container">
+    <!-- Bar Chart -->
+    <div class="chart-box reveal">
+      <div class="chart-title">Content Discovery Source</div>
+      <div class="bar-chart">
+        <div class="bar-row">
+          <span class="bar-label">Recommendations</span>
+          <div class="bar-track">
+            <div class="bar-fill" style="--w:80%"><span class="bar-val">80%</span></div>
+          </div>
+        </div>
+        <div class="bar-row">
+          <span class="bar-label">Search</span>
+          <div class="bar-track">
+            <div class="bar-fill" style="--w:10%"><span class="bar-val">10%</span></div>
+          </div>
+        </div>
+        <div class="bar-row">
+          <span class="bar-label">Browse</span>
+          <div class="bar-track">
+            <div class="bar-fill" style="--w:6%"><span class="bar-val">6%</span></div>
+          </div>
+        </div>
+        <div class="bar-row">
+          <span class="bar-label">Social / Other</span>
+          <div class="bar-track">
+            <div class="bar-fill" style="--w:4%"><span class="bar-val">4%</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Donut Chart -->
+    <div class="chart-box reveal">
+      <div class="chart-title">Viewer Segment Distribution</div>
+      <div class="donut-wrap">
+        <svg class="donut-svg" width="160" height="160" viewBox="0 0 160 160">
+          <!-- Background circle -->
+          <circle cx="80" cy="80" r="60" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="20"/>
+          <!-- Segments -->
+          <circle cx="80" cy="80" r="60" fill="none" stroke="#E50914" stroke-width="20"
+            stroke-dasharray="226 377" stroke-dashoffset="94" transform="rotate(-90 80 80)" opacity="0.9"/>
+          <circle cx="80" cy="80" r="60" fill="none" stroke="#ff6b6b" stroke-width="20"
+            stroke-dasharray="113 377" stroke-dashoffset="-132" transform="rotate(-90 80 80)" opacity="0.7"/>
+          <circle cx="80" cy="80" r="60" fill="none" stroke="#b20710" stroke-width="20"
+            stroke-dasharray="75 377" stroke-dashoffset="-245" transform="rotate(-90 80 80)" opacity="0.6"/>
+          <circle cx="80" cy="80" r="60" fill="none" stroke="#660a0d" stroke-width="20"
+            stroke-dasharray="38 377" stroke-dashoffset="-320" transform="rotate(-90 80 80)" opacity="0.5"/>
+          <text x="80" y="76" text-anchor="middle" fill="#f5f5f5" font-family="Bebas Neue, sans-serif" font-size="22">100%</text>
+          <text x="80" y="94" text-anchor="middle" fill="#888" font-family="DM Sans, sans-serif" font-size="9">SEGMENTED</text>
+        </svg>
+        <div class="donut-legend">
+          <div class="legend-row"><span class="legend-dot" style="background:#E50914"></span><span class="legend-name">Highly Engaged (Daily)</span><span class="legend-pct">60%</span></div>
+          <div class="legend-row"><span class="legend-dot" style="background:#ff6b6b"></span><span class="legend-name">Regular (Weekly)</span><span class="legend-pct">30%</span></div>
+          <div class="legend-row"><span class="legend-dot" style="background:#b20710"></span><span class="legend-name">Casual (Monthly)</span><span class="legend-pct">20%</span></div>
+          <div class="legend-row"><span class="legend-dot" style="background:#660a0d"></span><span class="legend-name">At-risk (Inactive)</span><span class="legend-pct">10%</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ALGORITHM SECTION -->
+<section id="algorithm">
+  <div class="section-label">// ML Architecture</div>
+  <h2 class="section-title reveal">The Algorithm Behind the Experience</h2>
+  <p class="section-body reveal">
+    Netflix's recommendation system is a layered ensemble of machine learning approaches
+    that continuously adapts to user behavior in real-time.
+  </p>
+
+  <div class="algo-grid">
+    <div class="algo-card reveal">
+      <div class="algo-num">01</div>
+      <div class="algo-title">Collaborative Filtering</div>
+      <div class="algo-desc">Identifies users with similar taste profiles and surfaces content that those peers enjoyed. "Users like you also watched…" is powered by matrix factorization models trained on billions of interactions.</div>
+      <span class="algo-tag">Core Algorithm</span>
+    </div>
+    <div class="algo-card reveal">
+      <div class="algo-num">02</div>
+      <div class="algo-title">Content-Based Filtering</div>
+      <div class="algo-desc">Analyzes metadata — genre, cast, director, mood, pace, and themes — to recommend titles similar to what the user has previously enjoyed, regardless of what other users watched.</div>
+      <span class="algo-tag">Metadata Engine</span>
+    </div>
+    <div class="algo-card reveal">
+      <div class="algo-num">03</div>
+      <div class="algo-title">Deep Neural Networks</div>
+      <div class="algo-desc">Multi-layer neural networks model complex, non-linear relationships between user features, content features, and contextual signals to generate nuanced preference scores for ranking.</div>
+      <span class="algo-tag">Deep Learning</span>
+    </div>
+    <div class="algo-card reveal">
+      <div class="algo-num">04</div>
+      <div class="algo-title">Contextual Bandit Models</div>
+      <div class="algo-desc">Balances exploration (new content) vs. exploitation (safe bets) using reinforcement learning. Ensures users discover fresh content while staying within their proven interest zones.</div>
+      <span class="algo-tag">Reinforcement Learning</span>
+    </div>
+  </div>
+</section>
+
+<!-- IMPACT TABLE -->
+<section class="metrics-section" id="impact">
+  <div class="section-label">// Business Impact</div>
+  <h2 class="section-title reveal">Outcomes of Data-Driven Engagement</h2>
+  <p class="section-body reveal">
+    The cumulative effect of Netflix's analytics strategy translates directly to measurable
+    business performance across every key dimension.
+  </p>
+
+  <div class="table-wrap reveal">
+    <table>
+      <thead>
+        <tr>
+          <th>Metric</th>
+          <th>Before Analytics</th>
+          <th>After Analytics</th>
+          <th>Impact</th>
+          <th>Priority</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Monthly Churn Rate</td>
+          <td>~3.5%</td>
+          <td>~1.9%</td>
+          <td>↓ 46% reduction</td>
+          <td><span class="tag-pill tag-high">High</span></td>
+        </tr>
+        <tr>
+          <td>Daily Active Usage</td>
+          <td>45 min/day</td>
+          <td>90+ min/day</td>
+          <td>↑ 2× increase</td>
+          <td><span class="tag-pill tag-high">High</span></td>
+        </tr>
+        <tr>
+          <td>Content Discovery Rate</td>
+          <td>22%</td>
+          <td>80%</td>
+          <td>↑ Via recommendation</td>
+          <td><span class="tag-pill tag-high">High</span></td>
+        </tr>
+        <tr>
+          <td>Series Completion Rate</td>
+          <td>55%</td>
+          <td>78%</td>
+          <td>↑ 42% improvement</td>
+          <td><span class="tag-pill tag-med">Medium</span></td>
+        </tr>
+        <tr>
+          <td>Homepage Click-Through</td>
+          <td>12%</td>
+          <td>34%</td>
+          <td>↑ 183% lift</td>
+          <td><span class="tag-pill tag-med">Medium</span></td>
+        </tr>
+        <tr>
+          <td>Subscriber Satisfaction</td>
+          <td>NPS: 52</td>
+          <td>NPS: 67</td>
+          <td>↑ +15 NPS points</td>
+          <td><span class="tag-pill tag-low">Tracked</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">NETFLIX</div>
+  <div class="footer-note">Mini Project · Web Analytics Case Study · Increasing Engagement at Netflix</div>
+</footer>
+
+<script>
+  // Intersection Observer for reveals
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry, i) => {
+      if (entry.isIntersecting) {
+        setTimeout(() => {
+          entry.target.classList.add('visible');
+        }, 80);
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.12 });
+
+  document.querySelectorAll('.reveal, .stat-item, .metric-fill, .bar-fill').forEach(el => {
+    observer.observe(el);
+  });
+
+  // Counter animation
+  function animateCounter(el) {
+    const target = parseInt(el.dataset.target);
+    const duration = 1800;
+    const start = performance.now();
+    const update = (now) => {
+      const elapsed = now - start;
+      const progress = Math.min(elapsed / duration, 1);
+      const ease = 1 - Math.pow(1 - progress, 3);
+      el.textContent = Math.floor(ease * target);
+      if (progress < 1) requestAnimationFrame(update);
+      else el.textContent = target;
+    };
+    requestAnimationFrame(update);
+  }
+
+  const statsObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.querySelectorAll('.counter').forEach(animateCounter);
+        entry.target.querySelectorAll('.stat-item').forEach(el => el.classList.add('visible'));
+        statsObserver.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.3 });
+
+  statsObserver.observe(document.getElementById('stats-strip'));
+</script>
+</body>
+</html>
